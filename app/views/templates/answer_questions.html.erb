@@ -1,0 +1,17 @@
+<h2>Answer the questions</h2>
+
+  <%= form_with local: true do |form| %>
+
+    <% @questions.each do |question| %>
+      <p>
+        <%= question.text %> <br>
+        <%= form.text_field question.id.to_s %>
+      </p>
+
+    <% end %>
+      <p>
+        <%= form.submit %>
+      </p>
+  <% end %>
+
+<%= link_to 'Back', templates_path %><br><br>

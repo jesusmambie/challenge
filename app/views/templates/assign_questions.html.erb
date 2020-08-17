@@ -1,0 +1,18 @@
+<h2>Set up template</h2>
+<%= simple_format @template.content %>
+
+  <%= form_with local: true do |form| %>
+
+    <% @tags.each do |tag| %>
+      <p>Tag:
+        <%= tag %> <br>
+        <%= form.collection_select("hash"+tag, @questions, :id, :text) %>
+      </p>
+
+    <% end %>
+      <p>
+        <%= form.submit %>
+      </p>
+  <% end %>
+
+<%= link_to 'Back', templates_path %><br><br>
