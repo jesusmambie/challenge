@@ -54,6 +54,7 @@ class TemplatesController < ApplicationController
   # DELETE /templates/1
   # DELETE /templates/1.json
   def destroy
+    @template = set_template
     @template.destroy
     respond_to do |format|
       format.html { redirect_to templates_url, notice: 'Template was successfully destroyed.' }
@@ -68,26 +69,19 @@ class TemplatesController < ApplicationController
   end
 
   def assign_questions_post
-    questions = []
-    params[:hash].each do |k, v|
-      question = Question.find(v)
-      question.update(tag: '['+k+']')
-      questions.push(question)
-    end
-    template = Template.find(params[:id])
-    template.questions = questions
+    set_template.questions = set_questions(params[:hash])
     redirect_to templates_path
   end
 
   def answer_questions
-    @questions = Template.find(params[:id]).questions
+    @questions = set_template.questions
     if @questions.count == 0
       redirect_to templates_path, notice: "Please assign questions to the template"
     end
   end
 
   def answer_questions_post
-    Template.find(params[:id]).questions.each do |question|
+    set_template.questions.each do |question|
       question.answer = params[question.id.to_s]
       question.save
     end
@@ -95,26 +89,42 @@ class TemplatesController < ApplicationController
   end
 
   def generate_pdf_document
-
     @id = params[:id]
-    @template = set_template
-    @content = @template.content
-    tags = @template.tags(@content)
-    tags.each do |tag|
-      replacement = @template.questions.where(tag: tag).first.answer
-      @content.gsub! tag, replacement
-    end
+    @content = set_content_variables(set_template)
     respond_to do |format|
           format.html
           format.pdf {render template: "/templates/generate_pdf_document", pdf: 'Document'}
     end
-
   end
 
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_template
       @template = Template.find(params[:id])
+    end
+
+    # Save questions assignment to template
+    def set_questions(hash)
+      questions = []
+      hash.each do |k, v|
+        question = Question.find(v)
+        question.update(tag: '['+k+']')
+        questions.push(question)
+      end
+      return questions
+    end
+
+    # Set the template content with the answers
+    def set_content_variables(template)
+      content = template.content
+      tags = template.tags(content)
+      tags.each do |tag|
+        if @template.questions.where(tag: tag).count > 0
+          replacement = @template.questions.where(tag: tag).first.answer
+          content.gsub! tag, replacement
+        end
+      end
+      return content
     end
 
     # Only allow a list of trusted parameters through.
